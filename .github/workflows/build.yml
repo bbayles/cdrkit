@@ -30,7 +30,9 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake ..
+          # Add -fcommon flag to allow multiple definitions of the same variable
+          # This fixes the "multiple definition of `outfile'" errors
+          cmake .. -DCMAKE_C_FLAGS="-fcommon"
           make
       
       - name: Create package directory
@@ -59,7 +61,8 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake ..
+          # Add -fcommon flag to allow multiple definitions of the same variable
+          cmake .. -DCMAKE_C_FLAGS="-fcommon"
           make
       
       - name: Create package directory
@@ -99,7 +102,8 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. -G "MSYS Makefiles"
+          # Add -fcommon flag to allow multiple definitions of the same variable
+          cmake .. -G "MSYS Makefiles" -DCMAKE_C_FLAGS="-fcommon"
           mingw32-make
       
       - name: Create package directory
