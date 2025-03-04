@@ -52,35 +52,26 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Install Dependencies (if any)
+      - name: Install Dependencies
         run: |
           choco install -y cmake make
-          # Add any other Windows dependencies here
 
       - name: Create Build Directory
         run: mkdir build
 
-      - name: Configure CMake
+      - name: Configure CMake (Winsock2 with Header Fix)
+        shell: bash
         run: |
           cd build
-          cmake ..
+          cmake .. \
+            -DCMAKE_SYSTEM_NAME=Windows \
+            -DCMAKE_C_FLAGS="-D_WIN32_WINNT=0x0601" \
+            -DCMAKE_REQUIRED_INCLUDES=/c/Windows/System32  \
+            -DCMAKE_REQUIRED_LIBRARIES=Ws2_32
 
       - name: Build
         run: |
           cd build
           make
-
-      - name: Prepare Artifacts
-        shell: bash
-        run: |
-          mkdir artifacts
-          cp -r build/*.exe artifacts/
-          # If there are DLLs or other required files, copy them as well
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: cdrkit-windows-build
-          path: artifacts
