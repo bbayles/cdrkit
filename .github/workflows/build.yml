@@ -3,15 +3,23 @@ name: Build CDRKit
 on:
   push:
     branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
+    # Pull requests from forks to main/master
     branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+    types: [opened, synchronize, reopened]
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build-ubuntu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Install dependencies
         run: |
@@ -34,7 +42,7 @@ jobs:
           cp build/readom/readom package/cdrkit-ubuntu/
           
       - name: Upload Ubuntu artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cdrkit-ubuntu
           path: package/cdrkit-ubuntu/
@@ -63,7 +71,7 @@ jobs:
           cp build/readom/readom package/cdrkit-macos/
       
       - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cdrkit-macos
           path: package/cdrkit-macos/
@@ -104,7 +112,7 @@ jobs:
           cp build/readom/readom.exe package/cdrkit-windows/
       
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cdrkit-windows
           path: package/cdrkit-windows/
@@ -112,7 +120,8 @@ jobs:
   create-release:
     needs: [build-ubuntu, build-macos, build-windows]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    # Only run on push to main/master from the original repo, not forks
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && github.repository_owner == github.event.repository.owner.login
     steps:
       - uses: actions/checkout@v3
       
@@ -121,9 +130,14 @@ jobs:
         run: echo "VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
       
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: dist
+          
+      - name: Set permissions
+        run: |
+          find dist -type f -exec chmod 644 {} \;
+          find dist -type d -exec chmod 755 {} \;
       
       - name: Create combined package
         run: |
@@ -135,7 +149,7 @@ jobs:
           zip -r ../cdrkit-${{ steps.get_version.outputs.VERSION }}-all.zip .
       
       - name: Upload combined artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cdrkit-all-platforms
           path: cdrkit-${{ steps.get_version.outputs.VERSION }}-all.zip
