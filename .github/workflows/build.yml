@@ -54,35 +54,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up MSYS2
+      - name: Setup MSYS2 environment
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
-          install: >-
-            make
-            mingw-w64-x86_64-gcc
+          update: true
+          install: >
+            base-devel
+            mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-cmake
-            patch
-            gzip
-            tar
 
-      - name: Build cdrkit
-        shell: msys2 {0}
+      - name: Build cdrkit using MSYS2
         run: |
-          make
-
-      - name: Prepare artifacts
+          mkdir build
+          cd build
+          cmake .. -G"MSYS Makefiles"
+          make -j$(nproc)
         shell: msys2 {0}
-        run: |
-            mkdir artifacts
-            cp build/mkisofs.exe artifacts/
-            cp build/icedax.exe artifacts/
-            cp build/cdda2wav.exe artifacts/
-            cp build/readom.exe artifacts/
-            cp build/xorriso.exe artifacts/
 
-      - name: Upload artifacts
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: cdrkit-windows-binaries
-          path: artifacts
+          name: cdrkit-build
+          path: build/
