@@ -53,23 +53,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Configure and build on Windows (icedax disabled)
+      - name: Configure and build genisoimage on Windows
         run: |
           mkdir build
           cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 -DBUILD_ICEDAX=OFF
-          cmake --build . --config Release
-      
-      - name: Create package directory on Windows
+          cmake .. -G "Visual Studio 17 2022" -A x64
+          cmake --build . --config Release --target genisoimage
+      - name: Package genisoimage for Windows
         run: |
           mkdir package\cdrkit-windows
           copy build\genisoimage\genisoimage.exe package\cdrkit-windows\
-          copy build\wodim\wodim.exe package\cdrkit-windows\
-          copy build\readom\readom.exe package\cdrkit-windows\
         shell: cmd
       
-      - name: Upload Windows artifacts
+      - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cdrkit-windows
+          name: cdrkit-windows-genisoimage
           path: package\cdrkit-windows\
