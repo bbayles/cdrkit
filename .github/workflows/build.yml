@@ -48,8 +48,7 @@ jobs:
         with:
           name: cdrkit-ubuntu
           path: package/cdrkit-ubuntu/
-
- build-windows:
+  build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
