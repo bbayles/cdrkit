@@ -51,27 +51,38 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: |
-          choco install -y cmake make
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >-
+            make
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            patch
+            gzip
+            tar
 
-      - name: Create Build Directory
-        run: mkdir build
-
-      - name: Configure CMake (Winsock2 with Header Fix)
-        shell: bash
+      - name: Build cdrkit
+        shell: msys2 {0}
         run: |
-          cd build
-          cmake .. \
-            -DCMAKE_SYSTEM_NAME=Windows \
-            -DCMAKE_C_FLAGS="-D_WIN32_WINNT=0x0601" \
-            -DCMAKE_REQUIRED_INCLUDES=/c/Windows/System32  \
-            -DCMAKE_REQUIRED_LIBRARIES=Ws2_32
-
-      - name: Build
-        run: |
-          cd build
           make
+
+      - name: Prepare artifacts
+        shell: msys2 {0}
+        run: |
+            mkdir artifacts
+            cp build/mkisofs.exe artifacts/
+            cp build/icedax.exe artifacts/
+            cp build/cdda2wav.exe artifacts/
+            cp build/readom.exe artifacts/
+            cp build/xorriso.exe artifacts/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdrkit-windows-binaries
+          path: artifacts
