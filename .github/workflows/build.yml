@@ -51,22 +51,36 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Configure and build genisoimage on Windows
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies (if any)
         run: |
-          mkdir build
+          choco install -y cmake make
+          # Add any other Windows dependencies here
+
+      - name: Create Build Directory
+        run: mkdir build
+
+      - name: Configure CMake
+        run: |
           cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64
-          cmake --build . --config Release --target genisoimage
-      - name: Package genisoimage for Windows
+          cmake ..
+
+      - name: Build
         run: |
-          mkdir package\cdrkit-windows
-          copy build\genisoimage\genisoimage.exe package\cdrkit-windows\
-        shell: cmd
-      
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
+          cd build
+          make
+
+      - name: Prepare Artifacts
+        shell: bash
+        run: |
+          mkdir artifacts
+          cp -r build/*.exe artifacts/
+          # If there are DLLs or other required files, copy them as well
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
         with:
-          name: cdrkit-windows-genisoimage
-          path: package\cdrkit-windows\
+          name: cdrkit-windows-build
+          path: artifacts
