@@ -80,7 +80,7 @@ jobs:
           # If there are DLLs or other required files, copy them as well
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cdrkit-windows-build
           path: artifacts
