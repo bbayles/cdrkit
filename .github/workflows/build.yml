@@ -48,113 +48,30 @@ jobs:
         with:
           name: cdrkit-ubuntu
           path: package/cdrkit-ubuntu/
-  
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Install dependencies
-        run: brew install cmake
-      
-      - name: Configure and build
-        run: |
-          mkdir -p build
-          cd build
-          # Add -fcommon flag to allow multiple definitions of the same variable
-          cmake .. -DCMAKE_C_FLAGS="-fcommon"
-          make
-      
-      - name: Create package directory
-        run: |
-          mkdir -p package/cdrkit-macos
-          cp build/genisoimage/genisoimage package/cdrkit-macos/
-          cp build/icedax/icedax package/cdrkit-macos/
-          cp build/wodim/wodim package/cdrkit-macos/
-          cp build/readom/readom package/cdrkit-macos/
-      
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: cdrkit-macos
-          path: package/cdrkit-macos/
-  
-  build-windows:
+
+ build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
-      - name: Setup MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: >-
-            git
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-make
-            mingw-w64-x86_64-zlib
-            mingw-w64-x86_64-bzip2
-      
-      - name: Configure and build
-        shell: msys2 {0}
+      - name: Configure and build on Windows
         run: |
-          mkdir -p build
+          mkdir build
           cd build
-          # Add -fcommon flag to allow multiple definitions of the same variable
-          cmake .. -G "MSYS Makefiles" -DCMAKE_C_FLAGS="-fcommon"
-          mingw32-make
+          cmake .. -G "Visual Studio 17 2022" -A x64
+          cmake --build . --config Release
       
-      - name: Create package directory
-        shell: msys2 {0}
+      - name: Create package directory on Windows
         run: |
-          mkdir -p package/cdrkit-windows
-          cp build/genisoimage/genisoimage.exe package/cdrkit-windows/
-          cp build/icedax/icedax.exe package/cdrkit-windows/
-          cp build/wodim/wodim.exe package/cdrkit-windows/
-          cp build/readom/readom.exe package/cdrkit-windows/
+          mkdir package\cdrkit-windows
+          copy build\genisoimage\genisoimage.exe package\cdrkit-windows\
+          copy build\icedax\icedax.exe package\cdrkit-windows\
+          copy build\wodim\wodim.exe package\cdrkit-windows\
+          copy build\readom\readom.exe package\cdrkit-windows\
+        shell: cmd
       
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: cdrkit-windows
-          path: package/cdrkit-windows/
-          if-no-files-found: warn
-
-  create-release:
-    needs: [build-ubuntu, build-macos, build-windows]
-    runs-on: ubuntu-latest
-    # Only run on push to main/master from the original repo, not forks
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && github.repository_owner == github.event.repository.owner.login
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Get version
-        id: get_version
-        run: echo "VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
-      
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-          
-      - name: Set permissions
-        run: |
-          find dist -type f -exec chmod 644 {} \;
-          find dist -type d -exec chmod 755 {} \;
-      
-      - name: Create combined package
-        run: |
-          mkdir -p combined
-          cp -r dist/cdrkit-ubuntu combined/
-          cp -r dist/cdrkit-macos combined/
-          cp -r dist/cdrkit-windows combined/
-          cd combined
-          zip -r ../cdrkit-${{ steps.get_version.outputs.VERSION }}-all.zip .
-      
-      - name: Upload combined artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: cdrkit-all-platforms
-          path: cdrkit-${{ steps.get_version.outputs.VERSION }}-all.zip
+          path: package\cdrkit-windows\
